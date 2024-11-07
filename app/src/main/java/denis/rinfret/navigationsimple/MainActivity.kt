@@ -8,25 +8,35 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import denis.rinfret.navigationsimple.ui.theme.NavigationSimpleTheme
 
-sealed class Screen(val route: String) {
-    object Home : Screen("home")
-    object Profile : Screen("profile")
-    object Settings : Screen("settings")
+sealed class Screen(val route: String, val title: String) {
+    data object Home : Screen("home", "Accueil")
+    data object Profile : Screen("profile", "Profil")
+    data object Settings : Screen("settings", "Paramètres")
 }
 
 class MainActivity : ComponentActivity() {
@@ -47,78 +57,104 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun HomeScreen(navController: NavController) {
+fun HomeScreen() {
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Text("Écran d'accueil")
-        Button(onClick = { navController.navigate(Screen.Profile.route) }) {
-            Text("Aller au profil")
-        }
-        Button(onClick = { navController.navigate(Screen.Settings.route) }) {
-            Text("Aller aux paramètres")
-        }
     }
 }
 
 @Composable
-fun ProfileScreen(navController: NavController) {
+fun ProfileScreen() {
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Text("Écran de profil")
-        Button(onClick = { navController.navigate(Screen.Settings.route) }) {
-            Text("Aller aux paramètres")
-        }
-        Button(onClick = { navController.popBackStack() }) {
-            Text("Retour")
-        }
     }
 }
 
 @Composable
-fun SettingsScreen(navController: NavController) {
+fun SettingsScreen() {
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Text("Écran des paramètres")
-        Button(onClick = { navController.popBackStack() }) {
-            Text("Retour")
-        }
-        Button(
-            onClick = {
-                navController.navigate(Screen.Home.route) {
-                    popUpTo(Screen.Home.route) { inclusive = true }
-                }
-            }
-        ) {
-            Text("Retour à l'accueil")
-        }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TopAppBarWithMenu(navController: NavController) {
+    var showMenu by remember { mutableStateOf(false) }
+
+    TopAppBar(
+        title = { Text("Mon Application") },
+        actions = {
+            IconButton(onClick = { showMenu = !showMenu }) {
+                Icon(Icons.Default.MoreVert, contentDescription = "Menu")
+            }
+            DropdownMenu(
+                expanded = showMenu,
+                onDismissRequest = { showMenu = false }
+            ) {
+                DropdownMenuItem(
+                    text = { Text(Screen.Home.title) },
+                    onClick = {
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.Home.route) { inclusive = true }
+                        }
+                        showMenu = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text(Screen.Profile.title) },
+                    onClick = {
+                        navController.navigate(Screen.Profile.route)
+                        showMenu = false
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text(Screen.Settings.title) },
+                    onClick = {
+                        navController.navigate(Screen.Settings.route)
+                        showMenu = false
+                    }
+                )
+            }
+        }
+    )
 }
 
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
 
-    NavHost(
-        navController = navController,
-        startDestination = Screen.Home.route
-    ) {
-        composable(Screen.Home.route) {
-            HomeScreen(navController)
+    Scaffold(
+        topBar = {
+            TopAppBarWithMenu(navController)
         }
-        composable(Screen.Profile.route) {
-            ProfileScreen(navController)
-        }
-        composable(Screen.Settings.route) {
-            SettingsScreen(navController)
+    ) { paddingValues ->
+        NavHost(
+            navController = navController,
+            startDestination = Screen.Home.route,
+            modifier = Modifier.padding(paddingValues)
+        ) {
+            composable(Screen.Home.route) {
+                HomeScreen()
+            }
+            composable(Screen.Profile.route) {
+                ProfileScreen()
+            }
+            composable(Screen.Settings.route) {
+                SettingsScreen()
+            }
         }
     }
 }
