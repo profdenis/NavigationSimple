@@ -6,37 +6,60 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavController
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import denis.rinfret.navigationsimple.ui.theme.NavigationSimpleTheme
 
-sealed class Screen(val route: String, val title: String) {
-    data object Home : Screen("home", "Accueil")
-    data object Profile : Screen("profile", "Profil")
-    data object Settings : Screen("settings", "Paramètres")
+sealed class Screen(
+    val route: String,
+    val title: String,
+    val icon: ImageVector
+) {
+    object Home : Screen(
+        route = "home",
+        title = "Accueil",
+        icon = Icons.Default.Home
+    )
+    object Profile : Screen(
+        route = "profile",
+        title = "Profil",
+        icon = Icons.Default.Person
+    )
+    object Settings : Screen(
+        route = "settings",
+        title = "Paramètres",
+        icon = Icons.Default.Settings
+    )
+
+    companion object {
+        val items = listOf(Home, Profile, Settings)
+    }
 }
 
 class MainActivity : ComponentActivity() {
@@ -59,86 +82,106 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun HomeScreen() {
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Écran d'accueil")
+        Icon(
+            Icons.Default.Home,
+            contentDescription = null,
+            modifier = Modifier.size(48.dp)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            "Écran d'accueil",
+            style = MaterialTheme.typography.headlineMedium
+        )
     }
 }
 
 @Composable
 fun ProfileScreen() {
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Écran de profil")
+        Icon(
+            Icons.Default.Person,
+            contentDescription = null,
+            modifier = Modifier.size(48.dp)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            "Écran de profil",
+            style = MaterialTheme.typography.headlineMedium
+        )
     }
 }
 
 @Composable
 fun SettingsScreen() {
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Écran des paramètres")
+        Icon(
+            Icons.Default.Settings,
+            contentDescription = null,
+            modifier = Modifier.size(48.dp)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            "Écran des paramètres",
+            style = MaterialTheme.typography.headlineMedium
+        )
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopAppBarWithMenu(navController: NavController) {
-    var showMenu by remember { mutableStateOf(false) }
-
-    TopAppBar(
-        title = { Text("Mon Application") },
-        actions = {
-            IconButton(onClick = { showMenu = !showMenu }) {
-                Icon(Icons.Default.MoreVert, contentDescription = "Menu")
-            }
-            DropdownMenu(
-                expanded = showMenu,
-                onDismissRequest = { showMenu = false }
-            ) {
-                DropdownMenuItem(
-                    text = { Text(Screen.Home.title) },
-                    onClick = {
-                        navController.navigate(Screen.Home.route) {
-                            popUpTo(Screen.Home.route) { inclusive = true }
-                        }
-                        showMenu = false
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text(Screen.Profile.title) },
-                    onClick = {
-                        navController.navigate(Screen.Profile.route)
-                        showMenu = false
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text(Screen.Settings.title) },
-                    onClick = {
-                        navController.navigate(Screen.Settings.route)
-                        showMenu = false
-                    }
-                )
-            }
-        }
-    )
-}
-
-@Composable
 fun AppNavigation() {
     val navController = rememberNavController()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
 
     Scaffold(
         topBar = {
-            TopAppBarWithMenu(navController)
+            TopAppBar(
+                title = { Text("Mon Application") }
+            )
+        },
+        bottomBar = {
+            NavigationBar {
+                Screen.items.forEach { screen ->
+                    NavigationBarItem(
+                        icon = {
+                            Icon(screen.icon, contentDescription = screen.title)
+                        },
+                        label = { Text(screen.title) },
+                        selected = currentRoute == screen.route,
+                        onClick = {
+                            navController.navigate(screen.route) {
+                                // Évite l'empilement des destinations
+                                popUpTo(navController.graph.startDestinationId) {
+                                    saveState = true
+                                }
+                                // Évite les copies multiples de la même destination
+                                launchSingleTop = true
+                                // Restaure l'état lors de la reselection
+                                restoreState = true
+                            }
+                        }
+                    )
+                }
+            }
         }
     ) { paddingValues ->
         NavHost(
