@@ -15,6 +15,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.rounded.LibraryMusic
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -30,10 +32,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import denis.rinfret.navigationsimple.ui.theme.NavigationSimpleTheme
 
 sealed class Screen(
@@ -46,11 +51,15 @@ sealed class Screen(
         title = "Accueil",
         icon = Icons.Default.Home
     )
+
     object Profile : Screen(
-        route = "profile",
+        route = "profile/{userId}",
         title = "Profil",
         icon = Icons.Default.Person
-    )
+    ) {
+        fun createRoute(userId: Int) = "profile/$userId"
+    }
+
     object Settings : Screen(
         route = "settings",
         title = "Paramètres",
@@ -80,7 +89,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun HomeScreen() {
+fun HomeScreen(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -89,7 +98,7 @@ fun HomeScreen() {
         verticalArrangement = Arrangement.Center
     ) {
         Icon(
-            Icons.Default.Home,
+            Icons.Rounded.LibraryMusic,
             contentDescription = null,
             modifier = Modifier.size(48.dp)
         )
@@ -98,11 +107,30 @@ fun HomeScreen() {
             "Écran d'accueil",
             style = MaterialTheme.typography.headlineMedium
         )
+
+        (1..4).forEach {
+            Button(onClick = {
+                navController.navigate(Screen.Profile.createRoute(userId = it))
+                {
+                    // Évite l'empilement des destinations
+                    popUpTo(navController.graph.startDestinationId) {
+                        saveState = true
+                    }
+                    // Évite les copies multiples de la même destination
+                    launchSingleTop = true
+                    // Restaure l'état lors de la reselection
+                    restoreState = true
+                }
+
+            }) {
+                Text(it.toString())
+            }
+        }
     }
 }
 
 @Composable
-fun ProfileScreen() {
+fun ProfileScreen(userId: Int) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -120,6 +148,11 @@ fun ProfileScreen() {
             "Écran de profil",
             style = MaterialTheme.typography.headlineMedium
         )
+        Text(
+            userId.toString(),
+            style = MaterialTheme.typography.headlineMedium
+        )
+
     }
 }
 
@@ -160,7 +193,7 @@ fun AppNavigation() {
         },
         bottomBar = {
             NavigationBar {
-                Screen.items.forEach { screen ->
+                Screen.items.filter { it.title != "Profil" }.forEach { screen ->
                     NavigationBarItem(
                         icon = {
                             Icon(screen.icon, contentDescription = screen.title)
@@ -190,10 +223,14 @@ fun AppNavigation() {
             modifier = Modifier.padding(paddingValues)
         ) {
             composable(Screen.Home.route) {
-                HomeScreen()
+                HomeScreen(navController)
             }
-            composable(Screen.Profile.route) {
-                ProfileScreen()
+            composable(
+                route = Screen.Profile.route,
+                arguments = listOf(navArgument("userId") { type = NavType.IntType })
+            ) { backStackEntry ->
+                val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                ProfileScreen(userId)
             }
             composable(Screen.Settings.route) {
                 SettingsScreen()
