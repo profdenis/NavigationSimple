@@ -119,7 +119,7 @@ fun HomeScreen(navController: NavController) {
                     // Évite les copies multiples de la même destination
                     launchSingleTop = true
                     // Restaure l'état lors de la reselection
-                    restoreState = true
+                    restoreState = false
                 }
 
             }) {
